@@ -56,6 +56,15 @@ fun LoginScreen(
 
     val scope = rememberCoroutineScope()
 
+    fun validarEmail(email: String): Boolean {
+        return Patterns.EMAIL_ADDRESS .matcher(email) .matches()
+    }
+    fun validarSenha(senha: String): Boolean {
+        val temNumero = senha.any{it.isDigit()}
+        val temLetra = senha.any{it.isLetter()}
+        return senha.length >= 6 && temLetra && temNumero
+    }
+
     Column(modifier = Modifier
         .fillMaxSize()
         .padding(8.dp),
@@ -66,7 +75,16 @@ fun LoginScreen(
             modifier = Modifier.padding(8.dp),
             value = email,
             placeholder = { Text("Email", color = Color.Gray) },
-            onValueChange = {email = it}
+            onValueChange = {
+                email = it
+                emailValid = validarEmail(it)
+
+            },
+            isError = !emailValid,
+            supportingText = {
+                if (email.isBlank()) Text("O email é obrigatorio")
+                else if (!emailValid) Text("Digite um email válido")
+            }
         )
         OutlinedTextField(
             modifier = Modifier.padding(8.dp),
@@ -74,10 +92,20 @@ fun LoginScreen(
             visualTransformation = if (senhaVisivel) VisualTransformation.None else PasswordVisualTransformation(),
             value = senha,
             placeholder = { Text("Senha", color = Color.Gray) },
-            onValueChange = {senha = it},
+            onValueChange = {
+                senha = it
+                senhaValid = validarSenha(it)
+            },
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.NumberPassword
+                keyboardType = KeyboardType.Password
             ),
+            isError = !senhaValid,
+            supportingText = {
+                if (senha.isBlank()) Text("A senha é obrigatória")
+                else if (senha.length < 6) Text("A senha deve conter pelo menos 6 caracteres")
+                else if (!senha.any{it.isDigit()}) Text("A senha deve conter pelo menos um número")
+                else if (!senha.any { it.isLetter() }) Text("A senha deve conter pelo menos uma letra")
+            }
         )
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -93,11 +121,12 @@ fun LoginScreen(
             Text("Pode usar biometria na próxima")
         }
         else
-        Button(
-            onClick = { if (!senhaValid || !emailValid ) Toast.makeText(context,"Verifique o email e senha",
-                Toast.LENGTH_SHORT) else onLogin()}
-        ) {Text("Acessar Sistema") }
+            Button(
+                onClick = {
+                    if (senhaValid == false) Toast.makeText(context,"Verifique sua senha", Toast.LENGTH_SHORT).show()
+                    else if (emailValid) Toast.makeText(context,"Verifique seu email", Toast.LENGTH_SHORT).show()
+                    else onLogin()
+                }
+            ) {Text("Acessar Sistema") }
     }
-
-
 }
